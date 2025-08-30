@@ -75,7 +75,7 @@ static void meltscr_create_table(void* data)
 
         int resolution = dwipe->_noise_resolution == -1 ? slices_resolution : dwipe->_noise_resolution;
 
-        dwipe->_tex_resolution = (int)fmax(slices_resolution, resolution);
+        dwipe->_tex_resolution = imax(slices_resolution, resolution);
         table->values_size = (uint16_t)(resolution * resolution);
         table->offsets_size = slices;
 
@@ -98,12 +98,13 @@ static void meltscr_create_texture(void *data)
 
         //blog(LOG_INFO, "generating offsets+texture for table %llu &[0x%llx]", table->uuid, dwipe->_table_ptr);
 
-        generate_table_offsets(table, (uint16_t)dwipe->_steps, dwipe->_increment, dwipe->_factor);
+        generate_table_offsets(table, dwipe->_steps, dwipe->_increment, dwipe->_factor);
 
         if (table->_texture) gs_texture_destroy(table->_texture);
 
         int resolution = dwipe->_tex_resolution;
-        const uint8_t **offsets = &table->_offsets;
+        const uint8_t *texdata = table->_offsets;
+        const uint8_t *offsets[] = { texdata };
 
         obs_enter_graphics();
         table->_texture = gs_texture_create(resolution, resolution, GS_R8, 1, offsets, 0);
@@ -268,12 +269,13 @@ static void meltscr_update(void *data, obs_data_t *settings)
 
     if (!buffer_uuid || !get_table_by_uuid(buffer_uuid))
     {
-        if (buffer_uuid) blog(LOG_WARNING, "missing table with uuid %" PRIu64 ", needs to be rebuilt", buffer_uuid); // for linux uint64_t is not ull, linux is fucking stupid
+        if (buffer_uuid) {
+            blog(LOG_WARNING, "missing table with uuid %" PRIu64 ", values buffer will be rebuilt", buffer_uuid);
+            update_table = true;
+        }
 
         buffer_uuid = create_table();
         obs_data_set_int(settings, S_PRIV_TABLEUUID, (int64_t)buffer_uuid);
-
-        update_table = true;
     }
 
     struct meltscr_table *ctable = get_table_by_uuid(buffer_uuid);
@@ -498,7 +500,7 @@ static obs_properties_t *meltscr_properties(void *data, void* type_data)
 
     p = obs_properties_add_button(props, S_BTN_HELP, obs_module_text("Help"), NULL);
     obs_property_button_set_type(p, OBS_BUTTON_URL);
-    obs_property_button_set_url(p, "https://sopze.com/obs-meltscr-transition/help");
+    obs_property_button_set_url(p, "https://sopze.com/docs?p=spz-obs-transition-meltscr");
 
     UNUSED_PARAMETER(type_data);
     return props;

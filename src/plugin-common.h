@@ -50,6 +50,16 @@ struct meltscr_table {
     gs_texture_t *_texture;
 };
 
+static inline float lerp(float a, float b, float factor)
+{
+    return (1 - factor) * a + factor * b;
+}
+
+static inline int imax(int a, int b)
+{
+    return a > b ? a : b;
+}
+
 static inline int get_next_power_two(int value) {
     int v= 2;
     while (v < value) v = v * 2;
@@ -61,7 +71,7 @@ static inline int get_next_power_two_sqrted(int value)
     return get_next_power_two((int)sqrt(value));
 }
 
-static inline uint8_t clamp_ui8(uint8_t v, uint8_t min, uint8_t max) {
+static inline int clamp(int v, int min, int max) {
     return v > max ? max : v < min ? min : v;
 }
 
@@ -88,10 +98,12 @@ static void get_runtime_table(struct meltscr_table *out, struct meltscr_table_pa
 
 static struct meltscr_table *get_table_by_uuid(uint64_t uuid)
 {
-    struct meltscr_table *table;
-    for (uint32_t i = 0u; i < table_count; i++) {
-        table = tables[i];
-        if (table && table->uuid == uuid) return table;
+    if (uuid) {
+        struct meltscr_table *table;
+        for (uint32_t i = 0u; i < table_count; i++) {
+            table = tables[i];
+            if (table && table->uuid == uuid) return table;
+        }
     }
     return NULL;
 }
@@ -178,14 +190,16 @@ static void generate_table_offsets(struct meltscr_table *table, int steps, float
     uint8_t maxstep = steps - 1;
     uint8_t stepsize = (uint8_t)round(255.0 * factor / maxstep);
 
-    uint8_t inc_value = (uint8_t)fmax(1.0, round(steps * increment));
-    uint8_t inc_modulo = (uint8_t)fmax(3.0, inc_value * 2 + 1);
+    uint8_t inc_value = (uint8_t)imax(1, (int)round(steps * increment));
+    uint8_t inc_modulo = (uint8_t)imax(3, inc_value * 2 + 1);
 
     uint16_t pos = table->position;
 
+    pos = 2;
+
     offsets[0] = (uint8_t)(values[pos] % steps);
 
-    uint8_t prev;
+    int8_t prev;
     
     for (uint16_t i = 1; i < slices; i++) {
 
@@ -194,7 +208,7 @@ static void generate_table_offsets(struct meltscr_table *table, int steps, float
         pos++;
         if (pos == size) pos = 0u;
 
-        offsets[i] = clamp_ui8(prev - ((values[pos] % inc_modulo) - inc_value), 0, maxstep);
+        offsets[i] = (uint8_t)clamp(prev - ((values[pos] % inc_modulo) - inc_value), 0, maxstep);
     }
 
     table->position = pos;
@@ -289,7 +303,7 @@ static void read_tables_from_disk()
         fseek(f, TABLESFILE_HEADER_SIZE, SEEK_SET);
         rlen= fread(&table_count, 4, 1, f);
 
-        if (rlen != 4) {
+        if (rlen != 1) {
             success = false;
             sprintf(message, "IO Error reading table list");
         }
@@ -307,9 +321,9 @@ static void read_tables_from_disk()
             for (uint32_t i = 0u; i < table_count; i++) {
 
                 rlen= fread(table_disk, table_disk_size, 1, f);
-                if (rlen != table_disk_size) {
+                if (rlen != 1) {
                     success = false;
-                    sprintf(message, "IO Error on table with index %u", i);
+                    sprintf(message, "IO Error on table at index %u", i);
                     tables_valid = i;
                     break;
                 }
@@ -317,9 +331,9 @@ static void read_tables_from_disk()
                 uint8_t *values = bmalloc(max_size);
 
                 rlen= fread(values, max_slices, 1, f);
-                if (rlen != max_slices) {
+                if (rlen != 1) {
                     success = false;
-                    sprintf(message, "IO Error on buffer values of table with index %u", i);
+                    sprintf(message, "IO Error on buffer values of table at index %u", i);
                     bfree(values);
                     tables_valid = i;
                     break;
@@ -359,8 +373,4 @@ static inline float cubic_ease_in_out(float t)
 
     float _tmp = (2.0f * t - 2.0f);
     return (t - 1.0f) * _tmp * _tmp + 1.0f;
-}
-
-static inline float lerp(float a, float b, float factor) {
-    return (1 - factor) * a + factor * b;
 }
