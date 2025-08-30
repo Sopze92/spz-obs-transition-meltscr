@@ -1,9 +1,13 @@
 #pragma once
+#include <obs-module.h>
+
 #include <plugin-support.h>
 #include <util/platform.h>
 
 #include <stdio.h>
 #include <time.h>
+
+#include <inttypes.h>
 
 #define TABLESFILE_HEADER_SIZE 48
 
@@ -124,7 +128,8 @@ static uint64_t create_table()
 static void leave_table(struct meltscr_table *table)
 {
     if (table->users > 0u) table->users--;
-    else obs_log(LOG_WARNING, "table with uuid %llu x[0x%llx] already had 0 users", table->uuid, table);
+    else
+        obs_log(LOG_WARNING, "table with uuid %" PRIu64 " x[0x%" PRIxPTR "] already had 0 users", table->uuid, table);
 }
 
 static void join_table(struct meltscr_table *table)

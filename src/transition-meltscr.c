@@ -1,8 +1,5 @@
-#include <obs-module.h>
 #include <graphics/vec2.h>
 #include "plugin-common.h"
-
-#include <plugin-support.h>
 
 #define S_PRIV_TABLEUUID "uuid"
 
@@ -72,15 +69,13 @@ static void meltscr_create_table(void* data)
 
         //blog(LOG_INFO, "generating values for table %llu &[0x%llx]", table->uuid, dwipe->_table_ptr);
 
-        uint8_t flags = table->state_flags;
-
         uint16_t slices = (uint16_t)dwipe->_slices;
 
         int slices_resolution = get_next_power_two_sqrted(slices);
 
         int resolution = dwipe->_noise_resolution == -1 ? slices_resolution : dwipe->_noise_resolution;
 
-        dwipe->_tex_resolution = max(slices_resolution, resolution);
+        dwipe->_tex_resolution = (int)fmax(slices_resolution, resolution);
         table->values_size = (uint16_t)(resolution * resolution);
         table->offsets_size = slices;
 
@@ -108,8 +103,10 @@ static void meltscr_create_texture(void *data)
         if (table->_texture) gs_texture_destroy(table->_texture);
 
         int resolution = dwipe->_tex_resolution;
+        const uint8_t **offsets = &table->_offsets;
+
         obs_enter_graphics();
-        table->_texture = gs_texture_create(resolution, resolution, GS_R8, 1, &table->_offsets, 0);
+        table->_texture = gs_texture_create(resolution, resolution, GS_R8, 1, offsets, 0);
         obs_leave_graphics();
     }
 }
@@ -271,7 +268,7 @@ static void meltscr_update(void *data, obs_data_t *settings)
 
     if (!buffer_uuid || !get_table_by_uuid(buffer_uuid))
     {
-        if (buffer_uuid) blog(LOG_WARNING, "missing table with uuid %llu, needs to be rebuilt", buffer_uuid);
+        if (buffer_uuid) blog(LOG_WARNING, "missing table with uuid %" PRIu64 ", needs to be rebuilt", buffer_uuid); // for linux uint64_t is not ull, linux is fucking stupid
 
         buffer_uuid = create_table();
         obs_data_set_int(settings, S_PRIV_TABLEUUID, (int64_t)buffer_uuid);
@@ -283,9 +280,9 @@ static void meltscr_update(void *data, obs_data_t *settings)
 
     if (dwipe->_table_ptr != ctable) {
 
-        if (!dwipe->_table_ptr) blog(LOG_INFO, "assigning table with uuid %llu &[0x%llx]", buffer_uuid, ctable);
+        if (!dwipe->_table_ptr) blog(LOG_INFO, "assigning table with uuid %" PRIu64 " &[0x%" PRIxPTR "]", buffer_uuid, (uintptr_t)ctable);
         else {
-            blog(LOG_INFO, "reassigning table with uuid %llu at &[0x%llx] (from &[0xllx])", buffer_uuid, ctable, dwipe->_table_ptr);
+            blog(LOG_INFO, "reassigning table with uuid %" PRIu64 " at &[0x%" PRIxPTR "] (from &[0x%" PRIxPTR "])", buffer_uuid, (uintptr_t)ctable, (uintptr_t)dwipe->_table_ptr);
             leave_table(dwipe->_table_ptr);
         }
 
@@ -452,10 +449,6 @@ static bool list_changed_audio_mode_callback(void *data, obs_properties_t *props
 
 static obs_properties_t *meltscr_properties(void *data, void* type_data)
 {
-    blog(LOG_INFO, "meltscr_properties()");
-
-    struct meltscr_info *dwipe = data;
-
     obs_properties_t *props = obs_properties_create();
     obs_property_t *p;
 

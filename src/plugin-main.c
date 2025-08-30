@@ -3,8 +3,6 @@ Sopze's meltscr transition
 Copyright (C) 2025 Sergio 'sopze' del Pino Arroyo -- sergiodepa92@gmail.com
 */
 
-#include <obs-module.h>
-#include <plugin-support.h>
 #include "plugin-common.h"
 
 OBS_DECLARE_MODULE()
