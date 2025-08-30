@@ -14,6 +14,7 @@
 #define S_PROP_DIRECTION "direction"
 #define S_PROP_RANDOMTYPE "random_type"
 #define S_PROP_RESOLUTION "table_size"
+#define S_PROP_SWAPPOINT "swap_point"
 #define S_PROP_AUDIOMODE "audio_mode"
 
 #define S_BTN_REFRESHTABLE "table_refresh"
@@ -54,6 +55,7 @@ struct meltscr_info {
     uint8_t _slice_offsets;
 
     int _audio_mode;
+    float _audio_swap_point;
 
     int __fake_position;
 };
@@ -165,7 +167,8 @@ void* meltscr_create(obs_data_t *settings, obs_source_t *source)
     obs_data_set_default_int(settings, S_PROP_DIRECTION, 2);
     obs_data_set_default_int(settings, S_PROP_RANDOMTYPE, 0);
     obs_data_set_default_int(settings, S_PROP_RESOLUTION, 16);
-    obs_data_set_default_int(settings, S_PROP_AUDIOMODE, 2);
+    obs_data_set_default_int(settings, S_PROP_AUDIOMODE, 3);
+    obs_data_set_default_int(settings, S_PROP_SWAPPOINT, 50);
 
     obs_source_update(source, settings);
 
@@ -233,8 +236,9 @@ static float meltscr_audio_callback_a(void *data, float t)
     struct meltscr_info *dwipe = data;
     switch (dwipe->_audio_mode) {
       default: return 1.0f - cubic_ease_in_out(t);
-      case 1: return t < .5f ? 1.0f : .0f;
-      case 2: return .0f;
+      case 1: return 1.0f - t;
+      case 2: return t < dwipe->_audio_swap_point ? 1.0f : .0f;
+      case 3: return .0f;
     }
 }
 
@@ -243,8 +247,9 @@ static float meltscr_audio_callback_b(void *data, float t)
     struct meltscr_info *dwipe = data;
     switch (dwipe->_audio_mode) {
       default: return cubic_ease_in_out(t);
-      case 1: return t < .5f ? .0f : 1.0f;
-      case 2: return floorf(t);
+      case 1: return t;
+      case 2: return t < dwipe->_audio_swap_point ? .0f : 1.0f;
+      case 3: return floorf(t);
     }
 }
 
@@ -312,7 +317,7 @@ static void meltscr_update(void *data, obs_data_t *settings)
         dwipe->_increment = .0625f;
         dwipe->_table_type = 0;
         dwipe->_noise_resolution = 16;
-        dwipe->_audio_mode = 2;
+        dwipe->_audio_mode = 3;
 
         update_table= true;
 
@@ -332,7 +337,8 @@ static void meltscr_update(void *data, obs_data_t *settings)
             slices = (int)obs_data_get_int(settings, S_PROP_SLICES),
             steps = (int)obs_data_get_int(settings, S_PROP_STEPS),
             type = (int)obs_data_get_int(settings, S_PROP_RANDOMTYPE),
-            resolution = (int)obs_data_get_int(settings, S_PROP_RESOLUTION);
+            resolution = (int)obs_data_get_int(settings, S_PROP_RESOLUTION),
+            audio_mode = (int)obs_data_get_int(settings, S_PROP_AUDIOMODE);
 
         const float 
             factor = .01f * (int)obs_data_get_int(settings, S_PROP_FACTOR), 
@@ -347,7 +353,11 @@ static void meltscr_update(void *data, obs_data_t *settings)
         dwipe->_table_type = type;
         dwipe->_noise_resolution = resolution;
 
-        dwipe->_audio_mode = (int)obs_data_get_int(settings, S_PROP_AUDIOMODE);
+        dwipe->_audio_mode = audio_mode;
+
+        if (audio_mode == 2) {
+            dwipe->_audio_swap_point = .01f * (int)obs_data_get_int(settings, S_PROP_SWAPPOINT);
+        }
     }
 
     dwipe->__fake_position = (int)obs_data_get_int(settings, S_PROP__FAKEPOSITION);
@@ -418,7 +428,9 @@ static bool list_changed_table_size_callback(void *data, obs_properties_t *props
 {
     meltscr_table_mark_dirty(data);
 
+    UNUSED_PARAMETER(props);
     UNUSED_PARAMETER(property);
+    UNUSED_PARAMETER(settings);
     return false;
 }
 
@@ -429,6 +441,20 @@ static bool button_pressed_refresh_table_callback(obs_properties_t *props, obs_p
     UNUSED_PARAMETER(props);
     UNUSED_PARAMETER(property);
     return false;
+}
+
+static bool list_changed_audio_mode_callback(void *data, obs_properties_t *props, obs_property_t *property, obs_data_t *settings)
+{
+    obs_property_t *p;
+
+    const bool swap_visible = obs_data_get_int(settings, S_PROP_AUDIOMODE) == 2;
+
+    p = obs_properties_get(props, S_PROP_SWAPPOINT);
+    obs_property_set_visible(p, swap_visible);
+
+    UNUSED_PARAMETER(data);
+    UNUSED_PARAMETER(property);
+    return true;
 }
 
 static obs_properties_t *meltscr_properties(void *data, void* type_data)
@@ -479,8 +505,12 @@ static obs_properties_t *meltscr_properties(void *data, void* type_data)
 
     p= obs_properties_add_list(props, S_PROP_AUDIOMODE, obs_module_text("AudioMode"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
     obs_property_list_add_int(p, obs_module_text("AudioMode.Smooth"), 0);
-    obs_property_list_add_int(p, obs_module_text("AudioMode.Swap"), 1);
-    obs_property_list_add_int(p, obs_module_text("AudioMode.Mute"), 2);
+    obs_property_list_add_int(p, obs_module_text("AudioMode.Linear"), 1);
+    obs_property_list_add_int(p, obs_module_text("AudioMode.Swap"), 2);
+    obs_property_list_add_int(p, obs_module_text("AudioMode.Mute"), 3);
+    obs_property_set_modified_callback2(p, list_changed_audio_mode_callback, data);
+
+    obs_properties_add_int_slider(props, S_PROP_SWAPPOINT, obs_module_text("SwapPoint"), 1, 100, 1);
 
     p = obs_properties_add_button(props, S_BTN_HELP, obs_module_text("Help"), NULL);
     obs_property_button_set_type(p, OBS_BUTTON_URL);

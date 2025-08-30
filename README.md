@@ -13,9 +13,6 @@ Extended re-implementation of the DooM (1991) screen melt effect as a scene tran
   <a href="https://patreon.com/sopze">
     <img src="https://img.shields.io/badge/Patreon-f86b59?style=flat&logo=patreon&logoColor=white">
   </a>
-  <a href="https://sopze.com">
-    <img src="https://img.shields.io/badge/Gumroad-ff90e8?style=flat&logo=gumroad&logoColor=black">
-  </a>
   <a href="https://buymeacoffee.com/sopze">
     <img src="https://img.shields.io/badge/BuyMeACoffee-ffdd00?style=flat&logo=buymeacoffee&logoColor=black">
   </a>
@@ -37,13 +34,13 @@ Extended re-implementation of the DooM (1991) screen melt effect as a scene tran
 * Fixed: Generates a random DooM-alike pattern once, reuses it forever
 * Dynamic: Generates a random DooM-alike pattern every time transition is triggered
 
+_the Fixed Random Tables are written to disk so you wont lose them between sessions_
+
 #### Audio transition modes
 * Smooth: Generic Ease-in-out interpolation
 * Linear: Basic linear interpolation
-* Swap: Audio will swap instantly upon reaching an user defined percentage of progress
+* Swap: Audio will swap instantly upon reaching a custom defined point
 * Mute: Fully mutes everything until the transition finishes
-
-fixed Random Tables are written to disk so you wont lose them between sessions
 
 ## Localization
 
