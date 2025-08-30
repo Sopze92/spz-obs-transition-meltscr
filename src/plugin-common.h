@@ -275,10 +275,20 @@ static void read_tables_from_disk()
     FILE *f = os_fopen(tables_path, "rb");
     if (f != NULL) {
 
-        fseek(f, TABLESFILE_HEADER_SIZE, SEEK_SET);
-        (void)fread(&table_count, 4, 1, f);
+        char message[256] = {0};
 
-        if (table_count > 0u) {
+        size_t rlen;
+        bool success = true;
+        uint32_t tables_valid = 0;
+
+        fseek(f, TABLESFILE_HEADER_SIZE, SEEK_SET);
+        rlen= fread(&table_count, 4, 1, f);
+
+        if (rlen != 4) {
+            success = false;
+            sprintf(message, "IO Error reading table list");
+        }
+        else if (table_count > 0u) {
 
             //blog(LOG_INFO, "reading %i tables.", table_count);
 
@@ -291,26 +301,48 @@ static void read_tables_from_disk()
 
             for (uint32_t i = 0u; i < table_count; i++) {
 
-                table = bmalloc(table_size);
-
-                (void)fread(table_disk, table_disk_size, 1, f);
+                rlen= fread(table_disk, table_disk_size, 1, f);
+                if (rlen != table_disk_size) {
+                    success = false;
+                    sprintf(message, "IO Error on table with index %u", i);
+                    tables_valid = i;
+                    break;
+                }
 
                 uint8_t *values = bmalloc(max_size);
-                uint8_t *offsets = bmalloc(max_size);
 
-                (void)fread(values, max_slices, 1, f);
-                //fread(offsets, max_slices, 1, f);
+                rlen= fread(values, max_slices, 1, f);
+                if (rlen != max_slices) {
+                    success = false;
+                    sprintf(message, "IO Error on buffer values of table with index %u", i);
+                    bfree(values);
+                    tables_valid = i;
+                    break;
+                }
+
+                table = bmalloc(table_size);
+                uint8_t *offsets = bmalloc(max_size);
 
                 get_runtime_table(table, table_disk, values, offsets);
 
                 tables[i] = table;
             }
+            
+            table_count = tables_valid;
 
             bfree(table_disk);
         }
         //else blog(LOG_INFO, "no tables to read.");
 
         fclose(f);
+
+        if (!success) {
+            obs_log(LOG_ERROR, "Error occurred while reading the tables file at '%s'.", tables_path);
+            blog(LOG_ERROR, "%s", message);
+            blog(LOG_INFO, "Sadly, all the unreadable table buffers will be regenerated...");
+        }
+
+
     }
 
     bfree(tables_path);

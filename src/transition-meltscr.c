@@ -265,22 +265,23 @@ static void meltscr_update(void *data, obs_data_t *settings)
     struct meltscr_info *dwipe = data;
     uint64_t buffer_uuid = (uint64_t)obs_data_get_int(settings, S_PRIV_TABLEUUID);
 
+    bool update_table = false;
+
     // table assignment
 
-    if (!buffer_uuid) {
+    if (!buffer_uuid || !get_table_by_uuid(buffer_uuid))
+    {
+        if (buffer_uuid) blog(LOG_WARNING, "missing table with uuid %llu, needs to be rebuilt", buffer_uuid);
 
         buffer_uuid = create_table();
-        blog(LOG_WARNING, "hello 1");
         obs_data_set_int(settings, S_PRIV_TABLEUUID, (int64_t)buffer_uuid);
+
+        update_table = true;
     }
 
     struct meltscr_table *ctable = get_table_by_uuid(buffer_uuid);
 
-    if (!ctable) {
-        blog(LOG_WARNING, "no table found with uuid %llu", buffer_uuid);
-        dwipe->_table_ptr = NULL;
-    }
-    else if (dwipe->_table_ptr != ctable) {
+    if (dwipe->_table_ptr != ctable) {
 
         if (!dwipe->_table_ptr) blog(LOG_INFO, "assigning table with uuid %llu &[0x%llx]", buffer_uuid, ctable);
         else {
@@ -302,8 +303,6 @@ static void meltscr_update(void *data, obs_data_t *settings)
         dwipe->_use_original = use_original;
     }
     else if (use_original) return;
-
-    bool update_table = false;
 
     if (use_original) {
         dwipe->_dir = (struct vec2){.0f, 1.0f};
