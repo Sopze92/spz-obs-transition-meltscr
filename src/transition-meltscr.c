@@ -22,8 +22,6 @@
 
 #define S_PROPGRP_FIXEDTABLE "grp_fixed_table"
 
-#define S_PROP__FAKEPOSITION "fake_position"
-
 struct meltscr_info {
     obs_source_t *source;
     gs_effect_t *effect;
@@ -56,8 +54,6 @@ struct meltscr_info {
 
     int _audio_mode;
     float _audio_swap_point;
-
-    int __fake_position;
 };
 
 static void meltscr_table_mark_dirty(void *data)
@@ -107,7 +103,7 @@ static void meltscr_create_texture(void *data)
 
         //blog(LOG_INFO, "generating offsets+texture for table %llu &[0x%llx]", table->uuid, dwipe->_table_ptr);
 
-        generate_table_offsets(table, (uint16_t)dwipe->_steps, dwipe->_increment, dwipe->_factor, dwipe->__fake_position);
+        generate_table_offsets(table, (uint16_t)dwipe->_steps, dwipe->_increment, dwipe->_factor);
 
         if (table->_texture) gs_texture_destroy(table->_texture);
 
@@ -360,8 +356,6 @@ static void meltscr_update(void *data, obs_data_t *settings)
         }
     }
 
-    dwipe->__fake_position = (int)obs_data_get_int(settings, S_PROP__FAKEPOSITION);
-
     if (update_table) {
 
         struct meltscr_table *table = dwipe->_table_ptr;
@@ -468,8 +462,6 @@ static obs_properties_t *meltscr_properties(void *data, void* type_data)
 
     p= obs_properties_add_bool(props, S_PROP_USEORIGINAL, obs_module_text("UseOriginal"));
     obs_property_set_modified_callback2(p, prop_changed_use_original_callback, data);
-
-    //obs_properties_add_int_slider(props, S_PROP__FAKEPOSITION, "FAKE_POS", 0, 4095, 1);
 
     obs_properties_add_int_slider(props, S_PROP_SLICES, obs_module_text("Slices"), min_slices, max_slices, 1);
     obs_properties_add_int_slider(props, S_PROP_FACTOR, obs_module_text("Factor"), 1, 100, 1);

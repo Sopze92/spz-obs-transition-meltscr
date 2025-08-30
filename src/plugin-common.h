@@ -57,7 +57,7 @@ static inline int get_next_power_two_sqrted(int value)
     return get_next_power_two((int)sqrt(value));
 }
 
-static inline int clamp(v, min, max) {
+static inline uint8_t clamp_ui8(uint8_t v, uint8_t min, uint8_t max) {
     return v > max ? max : v < min ? min : v;
 }
 
@@ -163,7 +163,7 @@ static void generate_table_values(struct meltscr_table *table)
     //bfree(text);
 }
 
-static void generate_table_offsets(struct meltscr_table *table, int steps, float increment, float factor, int __fake_position)
+static void generate_table_offsets(struct meltscr_table *table, int steps, float increment, float factor)
 {
     uint8_t *values = table->_values;
     uint8_t *offsets = table->_offsets;
@@ -173,12 +173,10 @@ static void generate_table_offsets(struct meltscr_table *table, int steps, float
     uint8_t maxstep = steps - 1;
     uint8_t stepsize = (uint8_t)round(255.0 * factor / maxstep);
 
-    uint8_t inc_value = (uint8_t)max(1, round(steps * increment));
-    uint8_t inc_modulo = (uint8_t)max(3, inc_value * 2 + 1);
+    uint8_t inc_value = (uint8_t)fmax(1.0, round(steps * increment));
+    uint8_t inc_modulo = (uint8_t)fmax(3.0, inc_value * 2 + 1);
 
     uint16_t pos = table->position;
-
-    //pos = __fake_position;
 
     offsets[0] = (uint8_t)(values[pos] % steps);
 
@@ -191,7 +189,7 @@ static void generate_table_offsets(struct meltscr_table *table, int steps, float
         pos++;
         if (pos == size) pos = 0u;
 
-        offsets[i] = (uint8_t)clamp(prev - ((values[pos] % inc_modulo) - inc_value), 0, maxstep);
+        offsets[i] = clamp_ui8(prev - ((values[pos] % inc_modulo) - inc_value), 0, maxstep);
     }
 
     table->position = pos;
@@ -231,8 +229,8 @@ static void write_tables_to_disk()
         //blog(LOG_INFO, "writing %u table(s) to disk", table_count);
 
         char notice[TABLESFILE_HEADER_SIZE] = {0};
-        strcpy(notice, "|-This file cannot be read in HUMAN mode.");
-        strcpy(&notice[TABLESFILE_HEADER_SIZE - 2], "-|");
+        memcpy(notice, "|-This file cannot be read in HUMAN mode.", 41);
+        memcpy(&notice[TABLESFILE_HEADER_SIZE - 2], "-|", 2);
 
         fwrite(notice, TABLESFILE_HEADER_SIZE, 1, f);
         fwrite(&table_count, 4, 1, f);
@@ -278,7 +276,7 @@ static void read_tables_from_disk()
     if (f != NULL) {
 
         fseek(f, TABLESFILE_HEADER_SIZE, SEEK_SET);
-        fread(&table_count, 4, 1, f);
+        (void)fread(&table_count, 4, 1, f);
 
         if (table_count > 0u) {
 
@@ -295,12 +293,12 @@ static void read_tables_from_disk()
 
                 table = bmalloc(table_size);
 
-                fread(table_disk, table_disk_size, 1, f);
+                (void)fread(table_disk, table_disk_size, 1, f);
 
                 uint8_t *values = bmalloc(max_size);
                 uint8_t *offsets = bmalloc(max_size);
 
-                fread(values, max_slices, 1, f);
+                (void)fread(values, max_slices, 1, f);
                 //fread(offsets, max_slices, 1, f);
 
                 get_runtime_table(table, table_disk, values, offsets);
