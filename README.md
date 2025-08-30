@@ -1,59 +1,62 @@
-# OBS Plugin Template
+# DooM's Melting screen transition plugin for OBS
 
-## Introduction
+Extended re-implementation of the DooM (1991) screen melt effect as a scene transition for OBS.
 
-The plugin template is meant to be used as a starting point for OBS Studio plugin development. It includes:
+<h4 align="center">
+  <img src="https://img.shields.io/badge/OBS-30-blue.svg?style=flat" alt="supports obs version 30">
+  <img src="https://img.shields.io/badge/Windows-0078D6?style=flat&logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAYdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCA1LjEuOBtp6qgAAAC2ZVhJZklJKgAIAAAABQAaAQUAAQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIAEAAAAFoAAABphwQAAQAAAGoAAAAAAAAA8nYBAOgDAADydgEA6AMAAFBhaW50Lk5FVCA1LjEuOAADAACQBwAEAAAAMDIzMAGgAwABAAAAAQAAAAWgBAABAAAAlAAAAAAAAAACAAEAAgAEAAAAUjk4AAIABwAEAAAAMDEwMAAAAADMbhZ8SlPoHAAAADFJREFUOE9joCZgBBH%2FgQDMwwEYgYAYNUxQNlXAqGGkg8FrGFXBaKIlHYwaNqCAgQEAz4kQH5TYSpkAAAAASUVORK5CYII%3D&logoColor=white">
+  <img src="https://img.shields.io/badge/Mac_OS-e8e8e8?style=flat&logo=apple&logoColor=black">
+  <img src="https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black">
+</h4>
 
-* Boilerplate plugin source code
-* A CMake project file
-* GitHub Actions workflows and repository actions
+<h4 align="center">
+  <a href="https://patreon.com/sopze">
+    <img src="https://img.shields.io/badge/Patreon-f86b59?style=flat&logo=patreon&logoColor=white">
+  </a>
+  <a href="https://sopze.com">
+    <img src="https://img.shields.io/badge/Gumroad-ff90e8?style=flat&logo=gumroad&logoColor=black">
+  </a>
+  <a href="https://buymeacoffee.com/sopze">
+    <img src="https://img.shields.io/badge/BuyMeACoffee-ffdd00?style=flat&logo=buymeacoffee&logoColor=black">
+  </a>
+  <br>
+  <a href="https://sopze.com">
+    <img src="https://img.shields.io/badge/Personal_site:-At_Sopze's-BAED20?style=flat">
+  </a>
+</h4>
 
-## Supported Build Environments
+## Features
+* Works in all 4 directions: Up | Down | Left | Right
+* Configurable amount of slices and the variation between them
+* Configurable overal size of the effect as a screen percentage
+* 3 Random generation modes: DooM, Fixed and Dynamic (see below)
+* 3 Audio transition modes: Smooth | Swap | Mute
 
-| Platform  | Tool   |
-|-----------|--------|
-| Windows   | Visal Studio 17 2022 |
-| macOS     | XCode 16.0 |
-| Windows, macOS  | CMake 3.30.5 |
-| Ubuntu 24.04 | CMake 3.28.3 |
-| Ubuntu 24.04 | `ninja-build` |
-| Ubuntu 24.04 | `pkg-config`
-| Ubuntu 24.04 | `build-essential` |
+#### Random generation modes
+* DooM: Generates screens with the same exact melting pattern that DooM had
+* Fixed: Generates a random DooM-alike pattern once, reuses it forever
+* Dynamic: Generates a random DooM-alike pattern every time transition is triggered
 
-## Quick Start
+#### Audio transition modes
+* Smooth: Generic Ease-in-out interpolation
+* Linear: Basic linear interpolation
+* Swap: Audio will swap instantly upon reaching an user defined percentage of progress
+* Mute: Fully mutes everything until the transition finishes
 
-An absolute bare-bones [Quick Start Guide](https://github.com/obsproject/obs-plugintemplate/wiki/Quick-Start-Guide) is available in the wiki.
+fixed Random Tables are written to disk so you wont lose them between sessions
 
-## Documentation
+## Localization
 
-All documentation can be found in the [Plugin Template Wiki](https://github.com/obsproject/obs-plugintemplate/wiki).
+The plugin is currently available in 8 languages
 
-Suggested reading to get up and running:
+Manually written:
+* English (US)
+* Spanish (Spain)
 
-* [Getting started](https://github.com/obsproject/obs-plugintemplate/wiki/Getting-Started)
-* [Build system requirements](https://github.com/obsproject/obs-plugintemplate/wiki/Build-System-Requirements)
-* [Build system options](https://github.com/obsproject/obs-plugintemplate/wiki/CMake-Build-System-Options)
-
-## GitHub Actions & CI
-
-Default GitHub Actions workflows are available for the following repository actions:
-
-* `push`: Run for commits or tags pushed to `master` or `main` branches.
-* `pr-pull`: Run when a Pull Request has been pushed or synchronized.
-* `dispatch`: Run when triggered by the workflow dispatch in GitHub's user interface.
-* `build-project`: Builds the actual project and is triggered by other workflows.
-* `check-format`: Checks CMake and plugin source code formatting and is triggered by other workflows.
-
-The workflows make use of GitHub repository actions (contained in `.github/actions`) and build scripts (contained in `.github/scripts`) which are not needed for local development, but might need to be adjusted if additional/different steps are required to build the plugin.
-
-### Retrieving build artifacts
-
-Successful builds on GitHub Actions will produce build artifacts that can be downloaded for testing. These artifacts are commonly simple archives and will not contain package installers or installation programs.
-
-### Building a Release
-
-To create a release, an appropriately named tag needs to be pushed to the `main`/`master` branch using semantic versioning (e.g., `12.3.4`, `23.4.5-beta2`). A draft release will be created on the associated repository with generated installer packages or installation programs attached as release artifacts.
-
-## Signing and Notarizing on macOS
-
-Basic concepts of codesigning and notarization on macOS are explained in the correspodning [Wiki article](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS) which has a specific section for the [GitHub Actions setup](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS#setting-up-code-signing-for-github-actions).
+Automatic translations (may contain errors):
+* Portuguese (Portugal)
+* German
+* French
+* Italian
+* Russian
+* Japanese

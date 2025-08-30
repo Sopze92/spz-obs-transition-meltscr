@@ -1,0 +1,58 @@
+uniform float4x4 ViewProj;
+uniform texture2d tex_a;
+uniform texture2d tex_b;
+uniform texture2d tex_c;
+uniform float2 factor; // factor, 1/factor
+uniform float4 sizes; // slices, texsize, 1/slices, 1/texsize
+uniform float2 dir;
+uniform float3 dir_mask;
+uniform float2 progress; // progress, progress * (1+factor)
+
+sampler_state textureSampler {
+	Filter    = Point;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSMeltScreen(VertData v_in) : TARGET
+{
+	float2 uvmelt= v_in.uv - dir * progress.y;
+  float sliceIndex= floor(sizes.x * saturate(lerp(uvmelt.x, uvmelt.y, dir_mask.x)));
+  float2 uvslice= float2(sliceIndex % sizes.y, floor(sliceIndex / sizes.y)) * sizes.w;
+  float sliceOffset= tex_c.Sample(textureSampler, uvslice).r;
+	float finalOffset= clamp(0, sliceOffset, saturate(progress.y)) * dir_mask.z;
+
+	uvmelt+= dir_mask * finalOffset;
+
+  // clamp to bounds and lerp A <-> B
+
+	float below= abs(sign(floor(uvmelt.x * .9)) + sign(floor(uvmelt.y * .9))); // 1 if any coord < 0.0
+	float over= abs(sign(floor((-uvmelt.x+1) * .9)) + sign(floor((-uvmelt.y+1) * .9))); // 1 if any coord > 1.0
+
+	float3 cola= tex_a.Sample(textureSampler, uvmelt).rgb;
+	float3 colb= tex_b.Sample(textureSampler, v_in.uv).rgb;
+  
+	return float4(lerp(cola, colb, lerp(over, below, below)), 1);
+}
+
+technique MeltScreen
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSMeltScreen(v_in);
+	}
+}
