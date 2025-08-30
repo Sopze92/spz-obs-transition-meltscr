@@ -33,13 +33,13 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.example.plugintemplate-for-obs"
+            "bundleId": "com.spz-obs-meltscr-transition.plugin"
         }
     },
-    "name": "plugintemplate-for-obs",
-    "displayName": "Plugin Template for OBS",
+    "name": "spz-obs-transition-meltscr",
+    "displayName": "Melting screen scene transition for OBS",
     "version": "1.0.0",
-    "author": "Your Name Here",
-    "website": "https://example.com",
-    "email": "me@example.com"
+    "author": "Sergio Sopze",
+    "website": "https://sopze.com",
+    "email": "sergiodepa92@gmail.com"
 }

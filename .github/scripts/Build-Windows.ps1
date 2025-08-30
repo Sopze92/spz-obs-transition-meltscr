@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('x64')]
+    [ValidateSet('x64', 'x86')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
     [string] $Configuration = 'RelWithDebInfo'
@@ -17,7 +17,7 @@ if ( $env:CI -eq $null ) {
     throw "Build-Windows.ps1 requires CI environment"
 }
 
-if ( ! ( [System.Environment]::Is64BitOperatingSystem ) ) {
+if ( $Target -eq 'x64' -and ! ( [System.Environment]::Is64BitOperatingSystem ) ) {
     throw "A 64-bit system is required to build the project."
 }
 
