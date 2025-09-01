@@ -25,7 +25,7 @@ extern const uint32_t
 extern uint8_t original_values[256];
 
 extern struct meltscr_table **tables;
-extern uint32_t table_count;
+extern uint16_t table_count;
 
 #pragma pack(push, 1)
 struct meltscr_table_packed {
@@ -94,15 +94,25 @@ static void get_runtime_table(struct meltscr_table *out, struct meltscr_table_pa
     out->offsets_size = in->offsets_size;
     out->_values = values;
     out->_offsets = offsets;
+    out->_texture = NULL;
 }
 
 static struct meltscr_table *get_table_by_uuid(uint64_t uuid)
 {
+    //blog(LOG_INFO, "searching for table with uuid %" PRIu64 " among %u tables", uuid, table_count);
     if (uuid) {
         struct meltscr_table *table;
-        for (uint32_t i = 0u; i < table_count; i++) {
+        for (uint16_t i = 0u; i < table_count; i++) {
+
             table = tables[i];
-            if (table && table->uuid == uuid) return table;
+
+            if (!table) {
+                //blog(LOG_INFO, "NULL table at index %u", i);
+                continue;
+            }
+            //else blog(LOG_INFO, "checking table %u (uuid %" PRIu64 " &[0x%" PRIuPTR "])", i, table->uuid, table);
+
+            if (table->uuid == uuid) return table;
         }
     }
     return NULL;
@@ -140,8 +150,7 @@ static uint64_t create_table()
 static void leave_table(struct meltscr_table *table)
 {
     if (table->users > 0u) table->users--;
-    else
-        obs_log(LOG_WARNING, "table with uuid %" PRIu64 " x[0x%" PRIxPTR "] already had 0 users", table->uuid, table);
+    else obs_log(LOG_WARNING, "table with uuid %" PRIu64 " x[0x%" PRIxPTR "] already had 0 users", table->uuid, table);
 }
 
 static void join_table(struct meltscr_table *table)
@@ -252,7 +261,7 @@ static void write_tables_to_disk()
         memcpy(&notice[TABLESFILE_HEADER_SIZE - 2], "-|", 2);
 
         fwrite(notice, TABLESFILE_HEADER_SIZE, 1, f);
-        fwrite(&table_count, 4, 1, f);
+        fwrite(&table_count, 2, 1, f);
 
         if (table_count > 0u) {
 
@@ -261,12 +270,12 @@ static void write_tables_to_disk()
             struct meltscr_table_packed *table_disk = bzalloc(table_disk_size);
             struct meltscr_table *table;
 
-            for (uint32_t i = 0u; i < table_count; i++) {
+            for (uint16_t i = 0u; i < table_count; i++) {
 
                 table = tables[i];
 
                 if (table->users == 0u && (table->state_flags & STATE_FLAG_DEAD) != 0) {
-                    //obs_log(LOG_INFO, "random table removed due cleanup");
+                    //obs_log(LOG_INFO, "table with uuid %" PRIu64 " removed due cleanup", table->uuid);
                     continue;
                 }
 
@@ -274,7 +283,8 @@ static void write_tables_to_disk()
                 fwrite(table_disk, table_disk_size, 1, f);
 
                 fwrite(table->_values, max_slices, 1, f);
-                //fwrite(table->_offsets, max_slices, 1, f);
+
+                blog(LOG_INFO, "written table with uuid %" PRIu64, table->uuid);
             }
 
             bfree(table_disk);
@@ -282,7 +292,7 @@ static void write_tables_to_disk()
 
         fclose(f);
     }
-    else obs_log(LOG_ERROR, "unable to write tables to disk");
+    else obs_log(LOG_ERROR, "IO Error writting tables: unable to write to file");
 
     bfree(tables_path);
 }
@@ -301,7 +311,7 @@ static void read_tables_from_disk()
         uint32_t tables_valid = 0;
 
         fseek(f, TABLESFILE_HEADER_SIZE, SEEK_SET);
-        rlen= fread(&table_count, 4, 1, f);
+        rlen= fread(&table_count, 2, 1, f);
 
         if (rlen != 1) {
             success = false;
@@ -314,11 +324,11 @@ static void read_tables_from_disk()
             size_t table_disk_size = sizeof(struct meltscr_table_packed);
             struct meltscr_table_packed *table_disk = bzalloc(table_disk_size);
 
-            tables = bzalloc(sizeof(uintptr_t) * table_count);
+            tables = bzalloc(sizeof(struct meltscr_table *) * table_count);
             size_t table_size = sizeof(struct meltscr_table);
             struct meltscr_table *table;
 
-            for (uint32_t i = 0u; i < table_count; i++) {
+            for (uint16_t i = 0u; i < table_count; i++) {
 
                 rlen= fread(table_disk, table_disk_size, 1, f);
                 if (rlen != 1) {
@@ -344,13 +354,16 @@ static void read_tables_from_disk()
 
                 get_runtime_table(table, table_disk, values, offsets);
 
-                tables[i] = table;
+                blog(LOG_INFO, "read table with uuid %" PRIu64, table->uuid);
+
+                tables[(int)i] = table;
             }
-            
-            table_count = tables_valid;
 
             bfree(table_disk);
         }
+            
+        if(!success) table_count = tables_valid;
+
         //else blog(LOG_INFO, "no tables to read.");
 
         fclose(f);

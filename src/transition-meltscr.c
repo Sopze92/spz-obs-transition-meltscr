@@ -267,7 +267,9 @@ static void meltscr_update(void *data, obs_data_t *settings)
 
     // table assignment
 
-    if (!buffer_uuid || !get_table_by_uuid(buffer_uuid))
+    struct meltscr_table *ctable = get_table_by_uuid(buffer_uuid);
+
+    if (!ctable)
     {
         if (buffer_uuid) {
             blog(LOG_WARNING, "missing table with uuid %" PRIu64 ", values buffer will be rebuilt", buffer_uuid);
@@ -275,18 +277,17 @@ static void meltscr_update(void *data, obs_data_t *settings)
         }
 
         buffer_uuid = create_table();
+        ctable = get_table_by_uuid(buffer_uuid);
+
         obs_data_set_int(settings, S_PRIV_TABLEUUID, (int64_t)buffer_uuid);
     }
+    else if (dwipe->_table_ptr != ctable) {
 
-    struct meltscr_table *ctable = get_table_by_uuid(buffer_uuid);
-
-    if (dwipe->_table_ptr != ctable) {
-
-        if (!dwipe->_table_ptr) blog(LOG_INFO, "assigning table with uuid %" PRIu64 " &[0x%" PRIxPTR "]", buffer_uuid, (uintptr_t)ctable);
-        else {
-            blog(LOG_INFO, "reassigning table with uuid %" PRIu64 " at &[0x%" PRIxPTR "] (from &[0x%" PRIxPTR "])", buffer_uuid, (uintptr_t)ctable, (uintptr_t)dwipe->_table_ptr);
+        if (dwipe->_table_ptr) {
+            //blog(LOG_INFO, "reassigning table with uuid %" PRIu64 " at &[0x%" PRIxPTR "] (from &[0x%" PRIxPTR "])", buffer_uuid, (uintptr_t)ctable, (uintptr_t)dwipe->_table_ptr);
             leave_table(dwipe->_table_ptr);
-        }
+        } 
+        //else blog(LOG_INFO, "assigning table with uuid %" PRIu64 " &[0x%" PRIxPTR "]", buffer_uuid, (uintptr_t)ctable);
 
         dwipe->_table_ptr = ctable;
         join_table(dwipe->_table_ptr);

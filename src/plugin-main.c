@@ -33,7 +33,7 @@ uint8_t original_values[256] = {0,   8,   109, 220, 222, 241, 149, 107, 75,  248
                                 17,  46,  52,  231, 232, 76,  31,  221, 84,  37,  216, 165, 212, 106, 197, 242, 98,  43,  39,  175, 254, 145, 190, 84,  118, 222, 187, 136, 120, 163, 236, 249};
 
 struct meltscr_table **tables;
-uint32_t table_count= 0;
+uint16_t table_count= 0u;
 
 bool obs_module_load(void)
 {
@@ -62,16 +62,17 @@ void obs_module_unload(void)
 
         struct meltscr_table *table;
 
-        for (uint32_t i = 0u; i < table_count; i++) {
+        for (uint32_t i = 0; i < table_count; i++) {
 
             table = tables[i];
 
-            if (table) {
-              if(table->_values) bfree(table->_values);
-              if(table->_offsets) bfree(table->_offsets);
-              if(table->_texture) gs_texture_destroy(table->_texture);
-              bfree(table);
-            }
+            if (!table) continue;
+
+            if(table->_values) bfree(table->_values);
+            if(table->_offsets) bfree(table->_offsets);
+            if(table->_texture) gs_texture_destroy(table->_texture);
+
+            bfree(table);
         }
 
         bfree(tables);
