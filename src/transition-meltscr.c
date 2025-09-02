@@ -15,7 +15,7 @@
 #define S_PROP_AUDIOMODE "audio_mode"
 
 #define S_BTN_REFRESHTABLE "table_refresh"
-#define S_BTN_HELP "help"
+//#define S_BTN_HELP "help"
 
 #define S_PROPGRP_FIXEDTABLE "grp_fixed_table"
 
@@ -499,9 +499,9 @@ static obs_properties_t *meltscr_properties(void *data, void* type_data)
 
     obs_properties_add_int_slider(props, S_PROP_SWAPPOINT, obs_module_text("SwapPoint"), 1, 100, 1);
 
-    p = obs_properties_add_button(props, S_BTN_HELP, obs_module_text("Help"), NULL);
-    obs_property_button_set_type(p, OBS_BUTTON_URL);
-    obs_property_button_set_url(p, "https://sopze.com/docs?p=spz-obs-transition-meltscr");
+    //p = obs_properties_add_button(props, S_BTN_HELP, obs_module_text("Help"), NULL);
+    //obs_property_button_set_type(p, OBS_BUTTON_URL);
+    //obs_property_button_set_url(p, "https://sopze.com/docs?p=spz-obs-transition-meltscr");
 
     UNUSED_PARAMETER(type_data);
     return props;

@@ -204,8 +204,6 @@ static void generate_table_offsets(struct meltscr_table *table, int steps, float
 
     uint16_t pos = table->position;
 
-    pos = 2;
-
     offsets[0] = (uint8_t)(values[pos] % steps);
 
     int8_t prev;
