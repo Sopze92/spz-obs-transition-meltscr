@@ -3,7 +3,7 @@
 Extended re-implementation of the DooM (1991) screen melt effect as a scene transition for OBS.
 
 <h4 align="center">
-  <img src="https://img.shields.io/badge/OBS-30-blue.svg?style=flat" alt="supports obs version 30">
+  <img src="https://img.shields.io/badge/OBS-30+-blue.svg?style=flat" alt="supports obs version 30">
   <img src="https://img.shields.io/badge/Windows-0078D6?style=flat&logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAYdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCA1LjEuOBtp6qgAAAC2ZVhJZklJKgAIAAAABQAaAQUAAQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIAEAAAAFoAAABphwQAAQAAAGoAAAAAAAAA8nYBAOgDAADydgEA6AMAAFBhaW50Lk5FVCA1LjEuOAADAACQBwAEAAAAMDIzMAGgAwABAAAAAQAAAAWgBAABAAAAlAAAAAAAAAACAAEAAgAEAAAAUjk4AAIABwAEAAAAMDEwMAAAAADMbhZ8SlPoHAAAADFJREFUOE9joCZgBBH%2FgQDMwwEYgYAYNUxQNlXAqGGkg8FrGFXBaKIlHYwaNqCAgQEAz4kQH5TYSpkAAAAASUVORK5CYII%3D&logoColor=white">
   <img src="https://img.shields.io/badge/Mac_OS-e8e8e8?style=flat&logo=apple&logoColor=black">
   <img src="https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black">
@@ -20,7 +20,15 @@ Extended re-implementation of the DooM (1991) screen melt effect as a scene tran
   <a href="https://sopze.com">
     <img src="https://img.shields.io/badge/Personal_site:-At_Sopze's-BAED20?style=flat">
   </a>
+  <br>
+  <br>
+  <img src="https://github.com/Sopze92/spz-obs-transition-meltscr/raw/main/.github/resources/p0.gif?raw=true" alt="transition preview gif">
+  <br>
+  <img src="https://github.com/Sopze92/spz-obs-transition-meltscr/raw/main/.github/resources/tripreview.gif?raw=true" alt="transition preview gif 2">
 </h4>
+
+## Download
+You can find all the downloads in the [MeltScreen plugin page @ GumRoad](https://sopze.gumroad.com/l/f_wipe-c), you can also build binaries yourself locally by cloning this repo
 
 ## Features
 * Works in all 4 directions: Up | Down | Left | Right
